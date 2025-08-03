@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ForgeKey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="icons/key.jpg">
+  <style>
+    body {
+      background: #f5f7fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+    input[type="password"], input[type="text"] {
+      padding: 0.7rem 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input[type="password"]:focus, input[type="text"]:focus {
+      border-color: #6366f1;
+    }
+    #generatedPassword {
+      background: #f1f5f9;
+      font-weight: bold;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    button {
+      flex: 1;
+      padding: 0.7rem 0;
+      border: none;
+      border-radius: 8px;
+      background: #6366f1;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:active {
+      background: #4f46e5;
+    }
+    #copyBtn.copied {
+      background: #22c55e !important;
+    }
+    .footer {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="font-family: 'Courier New', Courier, monospace; font-size: 50px;">ForgeKeys</h1>
+    <input type="password" id="masterKey" placeholder="Enter master key" autocomplete="off" />
+    <input type="text" id="siteName" placeholder="Enter site (e.g. facebook.com)" autocomplete="off" />
+    <div class="btn-row">
+      <button id="generateBtn">Generate</button>
+      <button id="copyBtn">Copy</button>
+    </div>
+    <input type="text" id="generatedPassword" placeholder="Generated password" readonly />
+    <div class="footer">No passwords stored. Everything is generated on the fly.</div>
+    <div class="footer" style="margin-top:0;">
+      <a href="https://github.com/yourusername/ForgeKey" target="_blank" style="color:#6366f1;text-decoration:none;">
+        <svg style="vertical-align:middle;margin-right:6px;" height="18" viewBox="0 0 16 16" width="18" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+            0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+            -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2
+            -3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65
+            7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51
+            .56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01
+            2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+  <script>
+    async function generateHash(input) {
+      const msgUint8 = new TextEncoder().encode(input);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex.slice(0, 16);
+    }
+
+    document.getElementById("generateBtn").addEventListener("click", async () => {
+      const masterKey = document.getElementById("masterKey").value;
+      const siteName = document.getElementById("siteName").value;
+      const passwordField = document.getElementById("generatedPassword");
+      if (!masterKey || !siteName) {
+        passwordField.value = "";
+        passwordField.placeholder = "Please fill both fields!";
+        passwordField.style.borderColor = "#ef4444";
+        setTimeout(() => {
+          passwordField.placeholder = "Generated password";
+          passwordField.style.borderColor = "#cbd5e1";
+        }, 1200);
+        return;
+      }
+      const rawInput = masterKey + siteName;
+      const password = await generateHash(rawInput);
+      passwordField.value = password;
+      passwordField.style.borderColor = "#22c55e";
+      setTimeout(() => {
+        passwordField.style.borderColor = "#cbd5e1";
+      }, 1000);
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      const passwordField = document.getElementById('generatedPassword');
+      if (!passwordField.value) return;
+      passwordField.select();
+      document.execCommand('copy');
+      this.innerHTML = '✔';
+      this.classList.add('copied');
+      setTimeout(() => {
+        this.innerHTML = 'Copy';
+        this.classList.remove('copied');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
